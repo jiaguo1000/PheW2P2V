@@ -1,7 +1,7 @@
 library(tidyverse)
 
 res = NULL
-for (i in 1:772) {
+for (i in 1:933) {
   filename = paste0("../../Output/MIMIC_task_", i, ".csv")
   tmp = read_csv(filename)
   res = rbind(res, tmp)

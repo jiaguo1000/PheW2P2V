@@ -6,7 +6,7 @@ disease = read_csv("Data/MIMIC_outcome_count.csv") %>% select(-group)
 G = list()
 m_list = c("auc", "f1", "ap")
 y_list = c("AUC-ROC", "F1-score", "AUC-PR")
-k = 200
+k = 300
 for (gi in 1:length(m_list)) {
   metric = m_list[gi]
   res = rawdata %>% 
@@ -143,7 +143,7 @@ legend_plot = get_legend(ggplot(data = plot_data, aes(x=rank, y=F1))+
                            temp_theme)
 
 G_title = ggdraw() + 
-  draw_label(paste0("Prediction performance of different methods on 772 phenotypes in the MIMIC-III database"),
+  draw_label(paste0("Prediction performance of different methods on 933 phenotypes in the MIMIC-III database"),
              fontface = "bold", size = 22)
 
 G_out = plot_grid(G_title, legend_plot, main_plot,
