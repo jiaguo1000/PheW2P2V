@@ -90,6 +90,9 @@ ctrls["SUBJECT_ID"] = ctrls["SUBJECT_ID"].astype(int)
 phecode_all = set(phecode_all + list(ctrls["phecode"].unique()))
 
 work_data = compress_pickle.load("Data/MIMIC_seq_data_unique.gz")
+predictor_seq =  compress_pickle.load("Data/MIMIC_predictor_seq.gz")
+predictor_seq = predictor_seq.groupby("SUBJECT_ID").event.agg(sum).reset_index()
+
 pred_diag = work_data["event"].tolist()
 pred_diag = set([x for sublist in pred_diag for x in sublist if "phecode" in x])
 phecode_all = {x for x in phecode_all if "phecode_"+x in pred_diag}
@@ -98,12 +101,18 @@ outcome_lib = pd.read_csv("Data/phecode_info.csv", dtype=object)
 outcome_lib = outcome_lib.drop(columns=["groupnum", "color"])
 res = pd.DataFrame({"phecode":"xxx", "cases":0, "ctrls":0}, index=[0])
 
-# for all phecode
+
+""" for all phecode, only keep incident cases """
 for i, code in enumerate(tqdm(phecode_all)):
     tmp1 = cases.loc[cases["phecode"]==code,:]
     tmp2 = ctrls.loc[ctrls["phecode"]==code,:]
+    
+    need_to_remove = predictor_seq.loc[predictor_seq["event"].apply(lambda x: "phecode_"+code in x),:]
+    tmp3 = tmp1.loc[tmp1["SUBJECT_ID"].apply(lambda x: x not in need_to_remove["SUBJECT_ID"]),:]
+    tmp4 = tmp2.loc[tmp2["SUBJECT_ID"].apply(lambda x: x not in need_to_remove["SUBJECT_ID"]),:]
+    
     tmp = pd.DataFrame(
-        {"phecode":code, "cases":tmp1["SUBJECT_ID"].nunique(), "ctrls":tmp2["SUBJECT_ID"].nunique()},
+        {"phecode":code, "cases":tmp3["SUBJECT_ID"].nunique(), "ctrls":tmp4["SUBJECT_ID"].nunique()},
         index=[i+1])
     res = pd.concat([res, tmp])
 
@@ -116,7 +125,7 @@ output["case_p"] = output["cases"]/output["total"]
 output = output.sort_values(by=['case_p'], ascending=False)
 output["phecode"] = ["phecode_"+x for x in output.phecode]
 output = output.loc[:,["phecode", "cases", "ctrls", "total", "case_p", "description", "group"]]
-output = output.loc[output["case_p"]>0.0025]
+output = output.loc[output["cases"]>=5]
 output.to_csv("Data/MIMIC_outcome_count.csv", index=False)
 
 
@@ -134,14 +143,20 @@ pred_diag = work_data["event"].tolist()
 pred_diag = set([x for sublist in pred_diag for x in sublist if "phecode" in x])
 phecode_all = {x for x in phecode_all if "phecode_"+x in pred_diag}
 
-# for all phecode
+
+""" for all phecode, only keep incident cases """
 res = pd.DataFrame(cases["SUBJECT_ID"].unique(), columns=["SUBJECT_ID"])
 for i, code in enumerate(tqdm(phecode_all)):
     tmp1 = cases.loc[cases["phecode"]==code,:].drop(columns=["phecode"]).copy()
     tmp2 = ctrls.loc[ctrls["phecode"]==code,:].drop(columns=["phecode"]).copy()
-    tmp1[code] = 1
-    tmp2[code] = 0
-    tmp = pd.concat([tmp1, tmp2]).reset_index(drop=True)
+    
+    need_to_remove = predictor_seq.loc[predictor_seq["event"].apply(lambda x: "phecode_"+code in x),:]
+    tmp3 = tmp1.loc[tmp1["SUBJECT_ID"].apply(lambda x: x not in need_to_remove["SUBJECT_ID"]),:].copy()
+    tmp4 = tmp2.loc[tmp2["SUBJECT_ID"].apply(lambda x: x not in need_to_remove["SUBJECT_ID"]),:].copy()
+    
+    tmp3[code] = 1
+    tmp4[code] = 0
+    tmp = pd.concat([tmp3, tmp4]).reset_index(drop=True)
     res = pd.merge(res, tmp, how="left")
 
 compress_pickle.dump(res, 'Data/MIMIC_outcome_case_ctrl.gz')
