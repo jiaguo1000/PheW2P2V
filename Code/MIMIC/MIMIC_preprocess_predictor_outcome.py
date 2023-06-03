@@ -125,7 +125,7 @@ output["case_p"] = output["cases"]/output["total"]
 output = output.sort_values(by=['case_p'], ascending=False)
 output["phecode"] = ["phecode_"+x for x in output.phecode]
 output = output.loc[:,["phecode", "cases", "ctrls", "total", "case_p", "description", "group"]]
-output = output.loc[output["cases"]>=5]
+output = output.loc[output["case_p"]>=0.0005]
 output.to_csv("Data/MIMIC_outcome_count.csv", index=False)
 
 
