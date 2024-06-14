@@ -74,7 +74,7 @@ def cv_each_D(
     LR_model = LogisticRegression(random_state=0, penalty="l1", solver="liblinear").fit(X_tran, y_tran)
     LR = get_metric(y_test, LR_model.predict_proba(X_test)[:,1], "LR")
     
-    RF_model = RandomForestClassifier(random_state=0).fit(X_tran, y_tran)
+    RF_model = RandomForestClassifier(n_estimators=500, random_state=0).fit(X_tran, y_tran)
     RF = get_metric(y_test, RF_model.predict_proba(X_test)[:,1], "RF")
 
     XGB_model = xgb.XGBClassifier(random_state=0).fit(X_tran, y_tran)
